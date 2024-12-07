@@ -3,26 +3,29 @@ using namespace std;
 
 int main(){
     int t;
+    int pairs=0;
     cin>>t;
     while(t--){
         int n;
-        cin>>n;
-        vector<pair<int,int>> points(n);
-        for(int j=0;j<n;j++){
-           int x,y;
-           cin>>x>>y;
-           points.push_back({x,y});
-        }
-        sort(points.begin(),points.end());
-       vector<int> v0,v1;
+        int p[n][2];
         for(int i=0;i<n;i++){
-            if(points[i].second==0){
-              v0.push_back(points[i].first);
-            }
-            else{
-                v1.push_back(points[i].first);
+            cin>>p[i][0]>>p[i][1];
+        }
+        for(int i=0;i<n;i++){
+            for(int j=(i+1);j<n;j++){
+                if(p[i][0]==p[j][0]){
+                    if(p[i][1]!=p[j][1]){
+                        pairs+=1;
+                    }
+                }
+                else{
+                    if(p[i][1]!=p[j][1]){
+                        
+                    }
+                }
             }
         }
         int ans=0;
+        ans+=pairs*(n-2);
     }
 }
