@@ -24,7 +24,21 @@ def calculate_mpg(car):
 for car in cars:
     calculate_mpg(car)
 
+#Named Arguments
+print('Hello', end='-')
+print('World', end='!')
+print([1, 2, 3, 4], sep=';')
 
-    
+
+def greet():
+    print('Hello')
+
+def before_and_after(func):
+    print('Before...')
+    func()
+    print('After...')
+
+before_and_after(greet)
+#Function can be passed as an argument to another function.
 
 
