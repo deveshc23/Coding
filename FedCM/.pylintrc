@@ -1,0 +1,26 @@
+[MASTER]
+disable=
+    missing-docstring,
+    missing-module-docstring,
+    missing-function-docstring,
+    missing-class-docstring,
+    too-many-arguments,
+    too-many-locals,
+    too-few-public-methods,
+    bad-continuation,
+    line-too-long,
+    invalid-name,
+    import-outside-toplevel,
+    consider-using-from-import,
+
+[DESIGN]
+# Disable design checks that are often too strict for research code
+max-locals=20
+max-arguments=10
+max-attributes=10
+
+[LOGGING]
+logging-format-style=new
+
+[FORMAT]
+max-line-length=120

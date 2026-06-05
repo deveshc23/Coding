@@ -1,4 +1,10 @@
 {
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.linting.flake8Enabled": false,
+    "python.linting.mypyEnabled": false,
+    "python.linting.lintOnSave": true,
+    
     "files.associations": {
         "ostream": "cpp",
         "array": "cpp",
@@ -68,5 +74,6 @@
         "typeindex": "cpp",
         "typeinfo": "cpp",
         "valarray": "cpp"
-    }
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }

@@ -1,0 +1,76 @@
+2025-05-19 18:20:58 - web_scraper - INFO - run_demo:171 - ==================================================
+2025-05-19 18:20:58 - web_scraper - INFO - run_demo:172 - Starting web scraper demonstration
+2025-05-19 18:20:58 - web_scraper - INFO - run_demo:173 - ==================================================
+2025-05-19 18:20:58 - web_scraper - INFO - run_demo:186 - Processing website: https://example.com/page1
+2025-05-19 18:20:58 - web_scraper - INFO - __init__:86 - Initialized WebScraper with session ID: 5127
+2025-05-19 18:20:58 - web_scraper - DEBUG - fetch_page:90 - Attempting to fetch URL: https://example.com/page1, retry count: 3
+2025-05-19 18:20:58 - web_scraper - INFO - fetch_page:107 - Successfully fetched https://example.com/page1
+2025-05-19 18:20:58 - web_scraper - DEBUG - __exit__:161 - Operation 'fetch_page' completed in 0.2967 seconds
+2025-05-19 18:20:58 - web_scraper - DEBUG - parse_content:126 - Parsing HTML content of length 72
+2025-05-19 18:20:58 - web_scraper - INFO - parse_content:140 - Successfully parsed content, found 5 items
+2025-05-19 18:20:58 - web_scraper - INFO - run_demo:186 - Processing website: https://example.com/page2
+2025-05-19 18:20:58 - web_scraper - INFO - __init__:86 - Initialized WebScraper with session ID: 9940
+2025-05-19 18:20:58 - web_scraper - DEBUG - fetch_page:90 - Attempting to fetch URL: https://example.com/page2, retry count: 3
+2025-05-19 18:20:59 - web_scraper - INFO - fetch_page:107 - Successfully fetched https://example.com/page2
+2025-05-19 18:20:59 - web_scraper - DEBUG - __exit__:161 - Operation 'fetch_page' completed in 0.4590 seconds
+2025-05-19 18:20:59 - web_scraper - DEBUG - parse_content:126 - Parsing HTML content of length 72
+2025-05-19 18:20:59 - web_scraper - INFO - parse_content:140 - Successfully parsed content, found 5 items
+2025-05-19 18:20:59 - web_scraper - INFO - run_demo:186 - Processing website: https://example.com/page3
+2025-05-19 18:20:59 - web_scraper - INFO - __init__:86 - Initialized WebScraper with session ID: 3208
+2025-05-19 18:20:59 - web_scraper - DEBUG - fetch_page:90 - Attempting to fetch URL: https://example.com/page3, retry count: 3
+2025-05-19 18:20:59 - web_scraper - DEBUG - __exit__:161 - Operation 'fetch_page' completed in 0.2104 seconds
+2025-05-19 18:20:59 - web_scraper - ERROR - fetch_page:111 - Error fetching https://example.com/page3: Failed to connect to server
+2025-05-19 18:20:59 - web_scraper - WARNING - fetch_page:114 - Retrying fetch for https://example.com/page3, 3 attempts remaining
+2025-05-19 18:20:59 - web_scraper - DEBUG - fetch_page:90 - Attempting to fetch URL: https://example.com/page3, retry count: 2
+2025-05-19 18:20:59 - web_scraper - DEBUG - __exit__:161 - Operation 'fetch_page' completed in 0.1720 seconds
+2025-05-19 18:20:59 - web_scraper - ERROR - fetch_page:111 - Error fetching https://example.com/page3: Failed to connect to server
+2025-05-19 18:20:59 - web_scraper - WARNING - fetch_page:114 - Retrying fetch for https://example.com/page3, 2 attempts remaining
+2025-05-19 18:20:59 - web_scraper - DEBUG - fetch_page:90 - Attempting to fetch URL: https://example.com/page3, retry count: 1
+2025-05-19 18:21:00 - web_scraper - INFO - fetch_page:107 - Successfully fetched https://example.com/page3
+2025-05-19 18:21:00 - web_scraper - DEBUG - __exit__:161 - Operation 'fetch_page' completed in 0.3501 seconds
+2025-05-19 18:21:00 - web_scraper - DEBUG - parse_content:126 - Parsing HTML content of length 72
+2025-05-19 18:21:00 - web_scraper - INFO - parse_content:140 - Successfully parsed content, found 5 items
+2025-05-19 18:21:00 - web_scraper - INFO - run_demo:186 - Processing website: https://invalid-domain.xyz/test
+2025-05-19 18:21:00 - web_scraper - INFO - __init__:86 - Initialized WebScraper with session ID: 7613
+2025-05-19 18:21:00 - web_scraper - DEBUG - fetch_page:90 - Attempting to fetch URL: https://invalid-domain.xyz/test, retry count: 3
+2025-05-19 18:21:00 - web_scraper - INFO - fetch_page:107 - Successfully fetched https://invalid-domain.xyz/test
+2025-05-19 18:21:00 - web_scraper - DEBUG - __exit__:161 - Operation 'fetch_page' completed in 0.4405 seconds
+2025-05-19 18:21:00 - web_scraper - DEBUG - parse_content:126 - Parsing HTML content of length 78
+2025-05-19 18:21:00 - web_scraper - INFO - parse_content:140 - Successfully parsed content, found 5 items
+2025-05-19 18:21:00 - web_scraper - INFO - run_demo:197 - Scraping completed. Successfully scraped 4/4 websites
+2025-05-19 18:22:27 - web_scraper - INFO - run_demo:171 - ==================================================
+2025-05-19 18:22:27 - web_scraper - INFO - run_demo:172 - Starting web scraper demonstration
+2025-05-19 18:22:27 - web_scraper - INFO - run_demo:173 - ==================================================
+2025-05-19 18:22:27 - web_scraper - INFO - run_demo:186 - Processing website: https://example.com/page1
+2025-05-19 18:22:27 - web_scraper - INFO - __init__:86 - Initialized WebScraper with session ID: 5388
+2025-05-19 18:22:27 - web_scraper - DEBUG - fetch_page:90 - Attempting to fetch URL: https://example.com/page1, retry count: 3
+2025-05-19 18:22:27 - web_scraper - INFO - fetch_page:107 - Successfully fetched https://example.com/page1
+2025-05-19 18:22:27 - web_scraper - DEBUG - __exit__:161 - Operation 'fetch_page' completed in 0.3531 seconds
+2025-05-19 18:22:27 - web_scraper - DEBUG - parse_content:126 - Parsing HTML content of length 72
+2025-05-19 18:22:27 - web_scraper - INFO - parse_content:140 - Successfully parsed content, found 5 items
+2025-05-19 18:22:27 - web_scraper - INFO - run_demo:186 - Processing website: https://example.com/page2
+2025-05-19 18:22:27 - web_scraper - INFO - __init__:86 - Initialized WebScraper with session ID: 5260
+2025-05-19 18:22:27 - web_scraper - DEBUG - fetch_page:90 - Attempting to fetch URL: https://example.com/page2, retry count: 3
+2025-05-19 18:22:28 - web_scraper - INFO - fetch_page:107 - Successfully fetched https://example.com/page2
+2025-05-19 18:22:28 - web_scraper - DEBUG - __exit__:161 - Operation 'fetch_page' completed in 0.3638 seconds
+2025-05-19 18:22:28 - web_scraper - DEBUG - parse_content:126 - Parsing HTML content of length 72
+2025-05-19 18:22:28 - web_scraper - INFO - parse_content:140 - Successfully parsed content, found 5 items
+2025-05-19 18:22:28 - web_scraper - INFO - run_demo:186 - Processing website: https://example.com/page3
+2025-05-19 18:22:28 - web_scraper - INFO - __init__:86 - Initialized WebScraper with session ID: 6247
+2025-05-19 18:22:28 - web_scraper - DEBUG - fetch_page:90 - Attempting to fetch URL: https://example.com/page3, retry count: 3
+2025-05-19 18:22:28 - web_scraper - DEBUG - __exit__:161 - Operation 'fetch_page' completed in 0.1106 seconds
+2025-05-19 18:22:28 - web_scraper - ERROR - fetch_page:111 - Error fetching https://example.com/page3: Failed to connect to server
+2025-05-19 18:22:28 - web_scraper - WARNING - fetch_page:114 - Retrying fetch for https://example.com/page3, 3 attempts remaining
+2025-05-19 18:22:28 - web_scraper - DEBUG - fetch_page:90 - Attempting to fetch URL: https://example.com/page3, retry count: 2
+2025-05-19 18:22:28 - web_scraper - INFO - fetch_page:107 - Successfully fetched https://example.com/page3
+2025-05-19 18:22:28 - web_scraper - DEBUG - __exit__:161 - Operation 'fetch_page' completed in 0.4623 seconds
+2025-05-19 18:22:28 - web_scraper - DEBUG - parse_content:126 - Parsing HTML content of length 72
+2025-05-19 18:22:29 - web_scraper - INFO - parse_content:140 - Successfully parsed content, found 5 items
+2025-05-19 18:22:29 - web_scraper - INFO - run_demo:186 - Processing website: https://invalid-domain.xyz/test
+2025-05-19 18:22:29 - web_scraper - INFO - __init__:86 - Initialized WebScraper with session ID: 1058
+2025-05-19 18:22:29 - web_scraper - DEBUG - fetch_page:90 - Attempting to fetch URL: https://invalid-domain.xyz/test, retry count: 3
+2025-05-19 18:22:29 - web_scraper - INFO - fetch_page:107 - Successfully fetched https://invalid-domain.xyz/test
+2025-05-19 18:22:29 - web_scraper - DEBUG - __exit__:161 - Operation 'fetch_page' completed in 0.2317 seconds
+2025-05-19 18:22:29 - web_scraper - DEBUG - parse_content:126 - Parsing HTML content of length 78
+2025-05-19 18:22:29 - web_scraper - INFO - parse_content:140 - Successfully parsed content, found 5 items
+2025-05-19 18:22:29 - web_scraper - INFO - run_demo:197 - Scraping completed. Successfully scraped 4/4 websites
