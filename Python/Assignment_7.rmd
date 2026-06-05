@@ -1,0 +1,204 @@
+---
+title: "Assignment_7"
+output: word_document
+date: "2025-04-02"
+---
+
+Part 1
+
+```{r}
+df_powerpose <- read.table("C:/Users/choud/OneDrive - IIT Kanpur/ECO Resources/CGS698C/df_powerpose.csv",header=T,sep=",")
+head(df_powerpose)
+```
+
+```{r}
+library(brms)
+library(rstan)
+library(dplyr)
+```
+
+We need to set the hptreat "Low" as reference and we need to set the priors. I have used high values of sigma so that it explores very well as we have no idea of the priors of the data.
+
+The weakly informative priors we are defining are b1 \~ Normal(0,20) b2 \~Normal (0,20) e \~ uniform (0,20)
+
+```{r}
+df_powerpose<-df_powerpose %>% 
+  mutate(delta_test=testm2-testm1,
+         hptreat=factor(hptreat,levels=c("Low","High")))
+
+priors<-c(prior(normal(0,20),class=Intercept),
+          prior(normal(0,20),class=b),
+          prior(normal(0,20),class=sigma))
+
+```
+
+```{r}
+model <- brm(
+  formula = delta_test ~ hptreat, 
+  data = df_powerpose,
+  family = gaussian(),
+  prior=priors,
+  chains=4,cores=4,
+  iter=2000,warmup=1000)
+summary(model)
+```
+
+```{r}
+library(bayesplot)
+mcmc_trace(model)
+```
+
+TO check the hypothesis of the hptreatHigh\>0
+
+```{r}
+hypothesis(model,"hptreatHigh>0")
+```
+
+This proves that that the results align with the research hypothesis. Assigning a subject a high power pose vs. a low power pose will lead to higher testosterone levels after treatment.
+
+Part 2
+
+Exercise 2.1
+
+```{r}
+poisson_crossings<-function(sentence_length,alpha,beta){
+  log_lambda<-alpha+beta*sentence_length
+  lambda_i<-exp(log_lambda)
+  crossings<-rpois(1,lambda_i)
+  return(crossings)
+}
+```
+
+Exercise 2.2
+
+```{r}
+sentence_length<-4
+nsamples<-1000
+alpha_samples<-rnorm(nsamples,mean=0.15,sd=0.1)
+beta_samples<-rnorm(nsamples,mean=0.25,sd=0.05)
+predicted_crossings <- sapply(1:nsamples, function(i) {
+  poisson_crossings(sentence_length, alpha_samples[i], beta_samples[i])
+})
+library(ggplot2)
+ggplot(data.frame(predicted_crossings), aes(x = predicted_crossings)) +
+  geom_histogram(binwidth = 1, fill = "blue", alpha = 0.7, color = "black") +
+  labs(title = "Prior Predictive Distribution of Crossing Dependencies",
+       x = "Number of Crossings", y = "Frequency") +
+  theme_minimal()
+
+```
+
+Exercise 2.3
+
+```{r}
+df_crossings<-read.table("C:/Users/choud/OneDrive - IIT Kanpur/ECO Resources/CGS698C/crossings.csv",sep=",",header=T)
+df_crossings
+```
+
+Convert Language column to categorical variable
+
+```{r}
+df_crossings$language_binary <- ifelse(df_crossings$Language == "German", 1, 0)
+df_crossings
+```
+
+Defining Priors and Fitting the Model M1
+
+```{r}
+# Define priors
+priors_M1 <- c(
+  prior(normal(0.15, 0.1), class = "Intercept"),  # α ~ Normal(0.15, 0.1)
+  prior(normal(0, 0.15), class = "b")  # β ~ Normal(0, 0.15)
+)
+
+# Fit Poisson model M1
+model_M1 <- brm(
+  nCross ~ s.length, 
+  data = df_crossings, 
+  family = poisson(), 
+  prior = priors_M1, 
+  chains = 4, iter = 2000, warmup = 1000, seed = 123
+)
+
+# Summary of M1
+summary(model_M1)
+```
+
+```{r}
+priors_M2 <- c(
+  prior(normal(0.15, 0.1), class = "Intercept"),  # α ~ Normal(0.15, 0.1)
+  prior(normal(0, 0.15), class = "b"),  # β ~ Normal(0, 0.15)
+  prior(normal(0, 0.15), class = "b", coef = "language_binary"),  
+  prior(normal(0, 0.15), class = "b", coef = "s.length:language_binary")  
+)
+```
+
+```{r}
+model_M2 <- brm(
+  nCross ~ s.length * language_binary, 
+  data = df_crossings, 
+  family = poisson(), 
+  prior = priors_M2, 
+  chains = 4, iter = 2000, warmup = 1000, seed = 123
+)
+
+# Summary of M2
+summary(model_M2)
+```
+
+Exercise 2.4
+
+```{r}
+observed <- read.table("C:/Users/choud/OneDrive - IIT Kanpur/ECO Resources/CGS698C/crossings.csv",sep=",",header=T)
+observed %>% group_by(Language,s.length) %>%
+ summarise(mean.crossings=mean(nCross)) %>%
+ ggplot(aes(x=s.length,y=mean.crossings,
+ group=Language,color=Language))+
+ geom_point()+geom_line()
+observed$s.length <- observed$s.length- mean(observed$s.length)
+observed$lang <- ifelse(observed$Language=="German",1,0)
+lpds.m1 <- c()
+lpds.m2 <- c()
+untested <- observed
+for(k in 1:5){
+ ytest <- sample_n(untested,size=nrow(observed)/5)
+ ytrain <- setdiff(observed,ytest)
+ untested <- setdiff(untested,ytest)
+ fit.m1<-
+   brm(nCross ~ 1 + s.length,data=ytrain,
+       family = poisson(link = "log"),
+       prior = c(prior(normal(0.15, 0.1), class = Intercept),
+                 prior(normal(0, 0.15), class = b)),
+       cores=4)
+ fit.m2<-
+   brm(nCross ~ 1 +s.length+lang+s.length*lang,
+       data=ytrain,
+       family=poisson(link = "log"),
+       prior = c(prior(normal(0.15, 0.1), class = Intercept),
+                 prior(normal(0, 0.15), class = b)),
+       cores=4)
+ post.m1 <- posterior_samples(fit.m1)
+ post.m2 <- posterior_samples(fit.m2)
+ lppd.m1 <- 0
+ lppd.m2 <- 0
+ for(i in 1:nrow(ytest)){
+  lpd_im1 <- log(mean(dpois(ytest[i,]$nCross,
+              lambda=exp(post.m1[,1]+
+              post.m1[,2]*ytest[i,]$s.length))))
+ lppd.m1 <- lppd.m1 + lpd_im1
+ lpd_im2 <- log(mean(dpois(ytest[i,]$nCross,
+              lambda=exp(post.m2[,1]+
+              post.m2[,2]*ytest[i,]$s.length+
+                post.m2[,3]*ytest[i,]$lang+
+                post.m2[,4]*ytest[i,]$s.length*ytest[i,]$lang)
+              )))
+ lppd.m2 <- lppd.m2 + lpd_im2
+ }
+ lpds.m1 <- c(lpds.m1,lppd.m1)
+ lpds.m2 <- c(lpds.m2,lppd.m2)
+}
+elpd.m1 <- sum(lpds.m1)
+elpd.m2 <- sum(lpds.m2)
+difference_elpd <- elpd.m2-elpd.m1
+
+```

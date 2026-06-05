@@ -1,0 +1,1 @@
+{"name":"Local: Round_Trip","url":"c:\\Users\\choud\\OneDrive - IIT Kanpur\\Coding\\CSES\\Round_Trip.cpp","tests":[{"id":1780572996712,"input":"5 6\n1 3\n1 2\n5 3\n1 5\n2 4\n4 5","output":"4\n3 5 1 3"}],"interactive":false,"memoryLimit":1024,"timeLimit":3000,"srcPath":"c:\\Users\\choud\\OneDrive - IIT Kanpur\\Coding\\CSES\\Round_Trip.cpp","group":"local","local":true}

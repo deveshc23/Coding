@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Black-Litterman Multi-Factor — Live Backtest</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg: #070b14;
+    --surface: #0d1526;
+    --border: #1a2840;
+    --text: #c8d8f0;
+    --muted: #4a6080;
+    --accent: #00e5ff;
+    --accent2: #ff6b35;
+    --accent3: #7fff6b;
+    --accent4: #ff3b8e;
+    --accent5: #ffe066;
+    --gold: #ffd700;
+    --danger: #ff4444;
+    --success: #00ff88;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* grid bg */
+  body::before {
+    content:'';
+    position:fixed; inset:0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events:none; z-index:0;
+  }
+
+  #app { position:relative; z-index:1; padding:16px; max-width:1600px; margin:0 auto; }
+
+  /* HEADER */
+  header {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:16px; padding-bottom:12px;
+    border-bottom:1px solid var(--border);
+  }
+  .logo {
+    font-family:'Syne', sans-serif; font-size:20px; font-weight:800;
+    letter-spacing:-0.5px;
+    background:linear-gradient(90deg, var(--accent), var(--accent3));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  .subtitle { color:var(--muted); font-size:10px; margin-top:2px; }
+
+  /* DATE DISPLAY */
+  #date-display {
+    font-family:'Syne', sans-serif; font-size:22px; font-weight:700;
+    color:var(--accent); letter-spacing:1px;
+    text-shadow:0 0 20px rgba(0,229,255,0.4);
+  }
+  #day-counter { color:var(--muted); font-size:10px; text-align:right; }
+
+  /* CONTROLS */
+  .controls {
+    display:flex; gap:10px; align-items:center; margin-bottom:16px;
+    flex-wrap:wrap;
+  }
+  .btn {
+    background:transparent; border:1px solid var(--accent);
+    color:var(--accent); padding:8px 18px;
+    font-family:'Space Mono', monospace; font-size:11px;
+    cursor:pointer; transition:all .15s;
+    text-transform:uppercase; letter-spacing:1px;
+  }
+  .btn:hover { background:var(--accent); color:var(--bg); }
+  .btn.active { background:var(--accent); color:var(--bg); }
+  .btn.danger { border-color:var(--danger); color:var(--danger); }
+  .btn.danger:hover { background:var(--danger); color:#fff; }
+
+  .speed-label { color:var(--muted); font-size:10px; }
+  .speed-btns { display:flex; gap:4px; }
+  .speed-btn {
+    background:transparent; border:1px solid var(--border);
+    color:var(--muted); padding:4px 10px; font-size:10px;
+    font-family:'Space Mono', monospace; cursor:pointer;
+    transition:all .15s;
+  }
+  .speed-btn.active { border-color:var(--accent3); color:var(--accent3); }
+
+  input[type=range] {
+    width:200px; accent-color:var(--accent);
+    cursor:pointer;
+  }
+  .scrub-label { color:var(--muted); font-size:10px; }
+
+  /* GRID LAYOUT */
+  .grid-main {
+    display:grid;
+    grid-template-columns: 1fr 320px;
+    grid-template-rows: auto auto;
+    gap:12px;
+  }
+
+  /* PANELS */
+  .panel {
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:2px;
+    padding:14px;
+    position:relative;
+    overflow:hidden;
+  }
+  .panel::before {
+    content:'';
+    position:absolute; top:0; left:0; right:0; height:2px;
+    background:linear-gradient(90deg, var(--accent), transparent);
+  }
+  .panel-title {
+    font-family:'Syne', sans-serif; font-size:11px; font-weight:700;
+    text-transform:uppercase; letter-spacing:2px;
+    color:var(--muted); margin-bottom:12px;
+  }
+
+  /* CHART */
+  #chart-panel { grid-column:1; grid-row:1; }
+  #chart-container { width:100%; height:320px; }
+  svg text { font-family:'Space Mono', monospace; }
+
+  /* RIGHT COLUMN */
+  .right-col { grid-column:2; grid-row:1/3; display:flex; flex-direction:column; gap:12px; }
+
+  /* METRICS */
+  .metrics-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .metric {
+    background:var(--bg); border:1px solid var(--border);
+    padding:8px 10px; border-radius:1px;
+  }
+  .metric-label { color:var(--muted); font-size:9px; text-transform:uppercase; letter-spacing:1px; }
+  .metric-value { font-size:16px; font-weight:700; margin-top:2px; font-family:'Syne', sans-serif; }
+  .metric-value.pos { color:var(--success); }
+  .metric-value.neg { color:var(--danger); }
+  .metric-value.neutral { color:var(--accent); }
+
+  /* STRATEGY LEGEND */
+  .legend { display:flex; flex-direction:column; gap:5px; margin-bottom:12px; }
+  .legend-row {
+    display:flex; align-items:center; gap:8px;
+    padding:5px 8px; cursor:pointer; transition:opacity .15s;
+    border:1px solid transparent; border-radius:1px;
+  }
+  .legend-row:hover { border-color:var(--border); }
+  .legend-row.hidden { opacity:0.3; }
+  .legend-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .legend-name { flex:1; font-size:10px; }
+  .legend-val { font-size:11px; font-weight:700; font-family:'Syne',sans-serif; }
+
+  /* WEIGHTS CHART */
+  #weights-panel { grid-column:1; grid-row:2; }
+  #weights-container { width:100%; height:160px; }
+
+  /* SIGNALS */
+  .signals-grid { display:flex; flex-direction:column; gap:5px; }
+  .signal-row {
+    display:grid; grid-template-columns:40px 1fr 36px;
+    align-items:center; gap:6px;
+  }
+  .signal-label { font-size:9px; color:var(--muted); text-align:right; }
+  .signal-bar-wrap { height:12px; background:var(--bg); position:relative; overflow:hidden; }
+  .signal-bar {
+    position:absolute; height:100%; top:0;
+    transition:width .3s ease, left .3s ease, background .3s;
+  }
+  .signal-bar.pos { background:var(--success); left:50%; }
+  .signal-bar.neg { background:var(--danger); right:50%; }
+  .signal-val { font-size:9px; text-align:right; }
+
+  /* VIEW BOX */
+  .view-box {
+    background:var(--bg); border:1px solid var(--border);
+    padding:10px; margin-top:8px;
+  }
+  .view-title { color:var(--muted); font-size:9px; letter-spacing:1px; text-transform:uppercase; margin-bottom:6px; }
+  .view-legs { display:flex; gap:8px; }
+  .leg { flex:1; }
+  .leg-label { font-size:9px; margin-bottom:4px; }
+  .leg-label.long { color:var(--success); }
+  .leg-label.short { color:var(--danger); }
+  .leg-assets { display:flex; flex-wrap:wrap; gap:3px; }
+  .leg-tag {
+    padding:2px 6px; border-radius:1px;
+    font-size:9px; font-weight:700;
+  }
+  .leg-tag.long { background:rgba(0,255,136,0.15); color:var(--success); border:1px solid rgba(0,255,136,0.3); }
+  .leg-tag.short { background:rgba(255,68,68,0.15); color:var(--danger); border:1px solid rgba(255,68,68,0.3); }
+
+  /* TODAY RETURN */
+  #today-ret {
+    font-family:'Syne',sans-serif; font-size:28px; font-weight:800;
+    text-align:center; padding:10px 0;
+    letter-spacing:-1px;
+    transition: color .3s;
+  }
+  .flash-pos { animation: flashPos .6s ease; }
+  .flash-neg { animation: flashNeg .6s ease; }
+  @keyframes flashPos { 0%,100%{background:transparent} 50%{background:rgba(0,255,136,0.1)} }
+  @keyframes flashNeg { 0%,100%{background:transparent} 50%{background:rgba(255,68,68,0.1)} }
+
+  /* Q/OMEGA */
+  .view-stats { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:6px; }
+  .vstat { background:var(--bg); padding:6px; text-align:center; }
+  .vstat-label { color:var(--muted); font-size:8px; letter-spacing:1px; }
+  .vstat-val { font-size:14px; font-weight:700; color:var(--accent5); font-family:'Syne',sans-serif; }
+
+  /* PROGRESS BAR */
+  #progress-bar-wrap { background:var(--bg); height:3px; margin-bottom:14px; border-radius:1px; }
+  #progress-bar { height:100%; background:var(--accent); transition:width .1s; border-radius:1px; }
+
+  .tooltip {
+    position:fixed; background:var(--surface); border:1px solid var(--border);
+    padding:8px 12px; pointer-events:none; z-index:100;
+    font-size:10px; line-height:1.8;
+    box-shadow:0 8px 24px rgba(0,0,0,.5);
+    display:none;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div>
+      <div class="logo">BL Multi-Factor Backtest</div>
+      <div class="subtitle">Black-Litterman · Cross-sectional + TS Momentum + Sharpe Signal + Trend R²</div>
+    </div>
+    <div style="text-align:right">
+      <div id="date-display">—</div>
+      <div id="day-counter">Day — / —</div>
+    </div>
+  </header>
+
+  <div id="progress-bar-wrap"><div id="progress-bar" style="width:0%"></div></div>
+
+  <div class="controls">
+    <button class="btn active" id="btn-play">▶ Play</button>
+    <button class="btn" id="btn-pause">⏸ Pause</button>
+    <button class="btn danger" id="btn-reset">↺ Reset</button>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="speed-label">SPEED</span>
+      <div class="speed-btns">
+        <button class="speed-btn" data-fps="2">Slow</button>
+        <button class="speed-btn active" data-fps="8">Normal</button>
+        <button class="speed-btn" data-fps="20">Fast</button>
+        <button class="speed-btn" data-fps="60">Turbo</button>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+      <span class="scrub-label">SCRUB</span>
+      <input type="range" id="scrubber" min="0" max="100" value="0">
+    </div>
+  </div>
+
+  <div class="grid-main">
+    <!-- CUMULATIVE RETURNS CHART -->
+    <div class="panel" id="chart-panel">
+      <div class="panel-title">Cumulative Returns</div>
+      <div id="chart-container"></div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="right-col">
+      <!-- TODAY -->
+      <div class="panel">
+        <div class="panel-title">Today's BL Multi-Factor Return</div>
+        <div id="today-ret">+0.00%</div>
+        <div class="view-stats">
+          <div class="vstat">
+            <div class="vstat-label">VIEW Q (ann.)</div>
+            <div class="vstat-val" id="view-q">—</div>
+          </div>
+          <div class="vstat">
+            <div class="vstat-label">UNCERTAINTY Ω</div>
+            <div class="vstat-val" id="view-omega">—</div>
+          </div>
+        </div>
+        <div class="view-box">
+          <div class="view-title">Active View</div>
+          <div class="view-legs">
+            <div class="leg">
+              <div class="leg-label long">▲ LONG</div>
+              <div class="leg-assets" id="long-assets"></div>
+            </div>
+            <div class="leg">
+              <div class="leg-label short">▼ SHORT</div>
+              <div class="leg-assets" id="short-assets"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- METRICS -->
+      <div class="panel">
+        <div class="panel-title">Live Performance</div>
+        <div class="metrics-grid">
+          <div class="metric">
+            <div class="metric-label">Ann. Return</div>
+            <div class="metric-value neutral" id="m-ret">—</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Ann. Vol</div>
+            <div class="metric-value neutral" id="m-vol">—</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Sharpe</div>
+            <div class="metric-value neutral" id="m-sharpe">—</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Max Drawdown</div>
+            <div class="metric-value neg" id="m-dd">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LEGEND -->
+      <div class="panel">
+        <div class="panel-title">Strategies</div>
+        <div class="legend" id="legend"></div>
+      </div>
+
+      <!-- FACTOR SIGNALS -->
+      <div class="panel" style="flex:1">
+        <div class="panel-title">Factor Z-Scores (per asset)</div>
+        <div class="signals-grid" id="signals-grid"></div>
+      </div>
+    </div>
+
+    <!-- WEIGHTS STACKED BAR -->
+    <div class="panel" id="weights-panel">
+      <div class="panel-title">BL Multi-Factor Portfolio Weights</div>
+      <div id="weights-container"></div>
+    </div>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+// ─── LOAD DATA ──────────────────────────────────────────────────────────────
+const RAW = __VIZ_DATA__;
+
+const assets    = RAW.assets;
+const dates     = RAW.dates;
+const cumRets   = RAW.cum_rets;
+const weights   = RAW.weights;
+const signals   = RAW.signals;
+const dailyRets = RAW.daily_rets;
+const strategies= Object.keys(cumRets);
+
+// Colors for strategies
+const COLORS = {
+  'Equal Weight'   : '#4a6080',
+  'Market Cap'     : '#7bb3e0',
+  'BL Equilibrium' : '#7fff6b',
+  'BL Old Momentum': '#ff6b35',
+  'BL Multi-Factor': '#00e5ff',
+};
+
+// ─── STATE ──────────────────────────────────────────────────────────────────
+let currentIdx  = 0;
+let playing     = false;
+let fps         = 8;
+let rafId       = null;
+let lastTime    = 0;
+let hiddenLines = new Set();
+const N         = dates.length;
+
+// ─── D3 CHART SETUP ─────────────────────────────────────────────────────────
+const chartEl = document.getElementById('chart-container');
+const cW = chartEl.clientWidth, cH = 320;
+const margin = {top:10, right:20, bottom:30, left:52};
+const iW = cW - margin.left - margin.right;
+const iH = cH - margin.top  - margin.bottom;
+
+const svg = d3.select('#chart-container').append('svg')
+  .attr('width', cW).attr('height', cH);
+const g = svg.append('g')
+  .attr('transform', `translate(${margin.left},${margin.top})`);
+
+// Scales
+const xScale = d3.scaleLinear().domain([0, N-1]).range([0, iW]);
+const allVals = strategies.flatMap(s => cumRets[s]);
+const yScale = d3.scaleLinear()
+  .domain([d3.min(allVals)*0.97, d3.max(allVals)*1.03])
+  .range([iH, 0]);
+
+// Grid lines
+const yTicks = yScale.ticks(5);
+g.append('g').attr('class','grid')
+  .selectAll('line').data(yTicks).enter().append('line')
+  .attr('x1',0).attr('x2',iW)
+  .attr('y1',d=>yScale(d)).attr('y2',d=>yScale(d))
+  .attr('stroke','#1a2840').attr('stroke-width',1);
+
+// Baseline
+g.append('line')
+  .attr('x1',0).attr('x2',iW)
+  .attr('y1',yScale(1)).attr('y2',yScale(1))
+  .attr('stroke','#2a3850').attr('stroke-dasharray','4,4');
+
+// Axes
+const xAxis = d3.axisBottom(xScale)
+  .tickFormat(i=>dates[Math.round(i)]?.slice(0,7)||'')
+  .ticks(8);
+g.append('g').attr('class','x-axis')
+  .attr('transform',`translate(0,${iH})`)
+  .call(xAxis)
+  .selectAll('text').attr('fill','#4a6080').attr('font-size','9px');
+g.selectAll('.x-axis path,.x-axis line').attr('stroke','#1a2840');
+
+const yAxis = d3.axisLeft(yScale).ticks(5).tickFormat(d=>d.toFixed(2));
+g.append('g').attr('class','y-axis')
+  .call(yAxis)
+  .selectAll('text').attr('fill','#4a6080').attr('font-size','9px');
+g.selectAll('.y-axis path,.y-axis line').attr('stroke','#1a2840');
+
+// Line paths (clipped to currentIdx)
+const lineGen = d3.line()
+  .x((d,i)=>xScale(i))
+  .y(d=>yScale(d))
+  .defined(d=>d!==null&&!isNaN(d));
+
+const paths = {};
+strategies.forEach(s => {
+  paths[s] = g.append('path')
+    .attr('fill','none')
+    .attr('stroke', COLORS[s] || '#fff')
+    .attr('stroke-width', s==='BL Multi-Factor' ? 2.5 : 1.5)
+    .attr('opacity', s==='BL Multi-Factor' ? 1.0 : 0.7);
+});
+
+// Current day vertical line
+const vLine = g.append('line')
+  .attr('y1',0).attr('y2',iH)
+  .attr('stroke','rgba(0,229,255,0.5)').attr('stroke-width',1)
+  .attr('stroke-dasharray','4,2');
+
+// Current day dot for BL Multi-Factor
+const dot = g.append('circle')
+  .attr('r',4).attr('fill','#00e5ff')
+  .attr('stroke','#070b14').attr('stroke-width',2);
+
+// ─── WEIGHTS CHART ───────────────────────────────────────────────────────────
+const wEl  = document.getElementById('weights-container');
+const wW   = wEl.clientWidth, wH = 160;
+const wm   = {top:10, right:20, bottom:30, left:52};
+const wiW  = wW - wm.left - wm.right;
+const wiH  = wH - wm.top  - wm.bottom;
+
+const wSvg = d3.select('#weights-container').append('svg')
+  .attr('width',wW).attr('height',wH);
+const wg   = wSvg.append('g').attr('transform',`translate(${wm.left},${wm.top})`);
+
+const assetColors = [
+  '#00e5ff','#7fff6b','#ff6b35','#ff3b8e','#ffe066',
+  '#a78bfa','#06b6d4','#f97316','#84cc16','#ec4899'
+];
+const aColor = {};
+assets.forEach((a,i)=>aColor[a]=assetColors[i%assetColors.length]);
+
+const wxScale = d3.scaleLinear().domain([0,N-1]).range([0,wiW]);
+const wStacked = d3.range(N).map(i=>{
+  let cum=0;
+  const obj={idx:i};
+  assets.forEach(a=>{
+    const v=weights.values[a][i]||0;
+    obj[`${a}_0`]=cum; obj[`${a}_1`]=cum+v; cum+=v;
+  });
+  return obj;
+});
+
+// Draw stacked area
+assets.forEach(a=>{
+  const area = d3.area()
+    .x(d=>wxScale(d.idx))
+    .y0(d=>wiH*(1-d[`${a}_1`]))
+    .y1(d=>wiH*(1-d[`${a}_0`]))
+    .defined((d,i)=>i<=currentIdx);
+  wg.append('path').attr('class',`warea-${a}`)
+    .attr('fill',aColor[a]).attr('opacity',0.8);
+});
+
+// Weight axis
+const wyAxis=d3.axisLeft(d3.scaleLinear().domain([0,1]).range([wiH,0])).ticks(4).tickFormat(d3.format('.0%'));
+wg.append('g').call(wyAxis).selectAll('text').attr('fill','#4a6080').attr('font-size','9px');
+wg.selectAll('.domain,.tick line').attr('stroke','#1a2840');
+
+// Weight x-axis
+wg.append('g').attr('transform',`translate(0,${wiH})`)
+  .call(d3.axisBottom(wxScale).tickFormat(i=>dates[Math.round(i)]?.slice(0,7)||'').ticks(8))
+  .selectAll('text').attr('fill','#4a6080').attr('font-size','9px');
+
+// Weight vline
+const wvLine = wg.append('line')
+  .attr('y1',0).attr('y2',wiH)
+  .attr('stroke','rgba(0,229,255,0.4)').attr('stroke-dasharray','3,2');
+
+// ─── LEGEND ──────────────────────────────────────────────────────────────────
+const legendEl = document.getElementById('legend');
+strategies.forEach(s=>{
+  const row=document.createElement('div');
+  row.className='legend-row'; row.dataset.s=s;
+  row.innerHTML=`
+    <div class="legend-dot" style="background:${COLORS[s]||'#fff'}"></div>
+    <div class="legend-name">${s}</div>
+    <div class="legend-val" id="lv-${s.replace(/\s/g,'_')}">—</div>
+  `;
+  row.addEventListener('click',()=>{
+    if(hiddenLines.has(s)){hiddenLines.delete(s);row.classList.remove('hidden');}
+    else{hiddenLines.add(s);row.classList.add('hidden');}
+    updateChart();
+  });
+  legendEl.appendChild(row);
+});
+
+// ─── SIGNALS ────────────────────────────────────────────────────────────────
+const sigGrid = document.getElementById('signals-grid');
+assets.forEach(a=>{
+  const row=document.createElement('div');
+  row.className='signal-row';
+  row.innerHTML=`
+    <div class="signal-label">${a}</div>
+    <div class="signal-bar-wrap">
+      <div class="signal-bar" id="sig-${a}"></div>
+    </div>
+    <div class="signal-val" id="sigv-${a}">—</div>
+  `;
+  sigGrid.appendChild(row);
+});
+
+// ─── UPDATE FUNCTIONS ────────────────────────────────────────────────────────
+function updateChart(){
+  const idx = Math.min(currentIdx, N-1);
+
+  // Lines
+  strategies.forEach(s=>{
+    if(hiddenLines.has(s)){paths[s].attr('d',''); return;}
+    const data=cumRets[s].slice(0,idx+1);
+    paths[s].attr('d',lineGen(data));
+  });
+
+  // vline + dot
+  const x=xScale(idx);
+  vLine.attr('x1',x).attr('x2',x);
+  const yv=cumRets['BL Multi-Factor'][idx];
+  if(yv!==undefined){
+    dot.attr('cx',x).attr('cy',yScale(yv));
+  }
+
+  // Weights stacked areas
+  assets.forEach(a=>{
+    const area=d3.area()
+      .x(d=>wxScale(d.idx))
+      .y0(d=>wiH*(1-d[`${a}_1`]))
+      .y1(d=>wiH*(1-d[`${a}_0`]));
+    const slice=wStacked.slice(0,idx+1);
+    wg.select(`.warea-${a}`).attr('d',area(slice));
+  });
+  wvLine.attr('x1',xScale(idx)*wiW/iW).attr('x2',xScale(idx)*wiW/iW);
+}
+
+function computeLiveMetrics(idx){
+  const rets=dailyRets['BL Multi-Factor'].slice(0,idx+1);
+  if(rets.length<2) return null;
+  const n=rets.length;
+  const mean=rets.reduce((a,b)=>a+b,0)/n;
+  const variance=rets.reduce((a,b)=>a+(b-mean)**2,0)/(n-1);
+  const annRet=Math.pow(1+mean,252)-1;
+  const annVol=Math.sqrt(variance*252);
+  const sharpe=annRet/annVol;
+  let cum=1, peak=1, maxDD=0;
+  for(const r of rets){cum*=(1+r);if(cum>peak)peak=cum;const dd=(cum/peak-1);if(dd<maxDD)maxDD=dd;}
+  return{annRet,annVol,sharpe,maxDD};
+}
+
+function formatPct(v){
+  const s=(v>=0?'+':'')+( v*100).toFixed(2)+'%';
+  return s;
+}
+
+function updateInfo(){
+  const idx=Math.min(currentIdx,N-1);
+  const date=dates[idx];
+
+  document.getElementById('date-display').textContent=date;
+  document.getElementById('day-counter').textContent=`Day ${idx+1} / ${N}`;
+  document.getElementById('progress-bar').style.width=`${(idx/(N-1))*100}%`;
+  document.getElementById('scrubber').value=Math.round((idx/(N-1))*100);
+
+  // Today return
+  const todayRet=dailyRets['BL Multi-Factor'][idx];
+  const retEl=document.getElementById('today-ret');
+  retEl.textContent=formatPct(todayRet);
+  retEl.style.color=todayRet>=0?'var(--success)':'var(--danger)';
+  retEl.className=''; void retEl.offsetWidth;
+  retEl.classList.add(todayRet>=0?'flash-pos':'flash-neg');
+
+  // Legend values
+  strategies.forEach(s=>{
+    const v=cumRets[s][idx];
+    const id=`lv-${s.replace(/\s/g,'_')}`;
+    const el=document.getElementById(id);
+    if(el&&v!==undefined){
+      el.textContent=formatPct(v-1);
+      el.style.color=v>=1?'var(--success)':'var(--danger)';
+    }
+  });
+
+  // View Q, Omega, legs
+  const si=signals;
+  if(si.dates[idx]===date){
+    const q=si.Q[idx], om=si.Omega[idx];
+    document.getElementById('view-q').textContent=(q*100).toFixed(2)+'%';
+    document.getElementById('view-omega').textContent=om.toFixed(4);
+
+    const ll=(si.long_leg[idx]||'').split(',');
+    const sl=(si.short_leg[idx]||'').split(',');
+    document.getElementById('long-assets').innerHTML=
+      ll.map(a=>`<span class="leg-tag long">${a}</span>`).join('');
+    document.getElementById('short-assets').innerHTML=
+      sl.map(a=>`<span class="leg-tag short">${a}</span>`).join('');
+
+    // Factor z-scores
+    assets.forEach(a=>{
+      const z=si.z_scores[a][idx];
+      const bar=document.getElementById(`sig-${a}`);
+      const val=document.getElementById(`sigv-${a}`);
+      if(!bar||!val) return;
+      const pct=Math.min(Math.abs(z)/3*50,50); // max ±3 → ±50%
+      if(z>=0){
+        bar.className='signal-bar pos';
+        bar.style.width=pct+'%'; bar.style.left='50%'; bar.style.right='';
+      } else {
+        bar.className='signal-bar neg';
+        bar.style.width=pct+'%'; bar.style.right='50%'; bar.style.left='';
+      }
+      val.textContent=z.toFixed(2);
+      val.style.color=z>=0?'var(--success)':'var(--danger)';
+    });
+  }
+
+  // Live metrics
+  const m=computeLiveMetrics(idx);
+  if(m){
+    const mRetEl=document.getElementById('m-ret');
+    const mVolEl=document.getElementById('m-vol');
+    const mShrEl=document.getElementById('m-sharpe');
+    const mDdEl =document.getElementById('m-dd');
+    mRetEl.textContent=formatPct(m.annRet);
+    mRetEl.className='metric-value '+(m.annRet>=0?'pos':'neg');
+    mVolEl.textContent=(m.annVol*100).toFixed(1)+'%';
+    mVolEl.className='metric-value neutral';
+    mShrEl.textContent=m.sharpe.toFixed(3);
+    mShrEl.className='metric-value '+(m.sharpe>=0.5?'pos':m.sharpe>=0.3?'neutral':'neg');
+    mDdEl.textContent=formatPct(m.maxDD);
+    mDdEl.className='metric-value neg';
+  }
+}
+
+// ─── ANIMATION LOOP ──────────────────────────────────────────────────────────
+function step(timestamp){
+  if(!playing) return;
+  const interval=1000/fps;
+  if(timestamp-lastTime>=interval){
+    lastTime=timestamp;
+    if(currentIdx<N-1){
+      currentIdx++;
+      updateChart();
+      updateInfo();
+    } else {
+      playing=false;
+      document.getElementById('btn-play').classList.add('active');
+      document.getElementById('btn-pause').classList.remove('active');
+      return;
+    }
+  }
+  rafId=requestAnimationFrame(step);
+}
+
+function play(){
+  if(playing) return;
+  if(currentIdx>=N-1) currentIdx=0;
+  playing=true;
+  lastTime=0;
+  rafId=requestAnimationFrame(step);
+  document.getElementById('btn-play').classList.remove('active');
+  document.getElementById('btn-pause').classList.add('active');
+}
+function pause(){
+  playing=false;
+  cancelAnimationFrame(rafId);
+  document.getElementById('btn-play').classList.add('active');
+  document.getElementById('btn-pause').classList.remove('active');
+}
+function reset(){
+  pause();
+  currentIdx=0;
+  updateChart();
+  updateInfo();
+}
+
+// ─── CONTROLS ────────────────────────────────────────────────────────────────
+document.getElementById('btn-play').addEventListener('click',play);
+document.getElementById('btn-pause').addEventListener('click',pause);
+document.getElementById('btn-reset').addEventListener('click',reset);
+
+document.querySelectorAll('.speed-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    fps=parseInt(btn.dataset.fps);
+    document.querySelectorAll('.speed-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+document.getElementById('scrubber').addEventListener('input',function(){
+  pause();
+  currentIdx=Math.round((this.value/100)*(N-1));
+  updateChart();
+  updateInfo();
+});
+
+// ─── TOOLTIP ────────────────────────────────────────────────────────────────
+const tooltip=document.getElementById('tooltip');
+svg.on('mousemove',function(event){
+  const [mx]=d3.pointer(event,g.node());
+  const i=Math.round(xScale.invert(mx));
+  if(i<0||i>=N) return;
+  let html=`<b>${dates[i]}</b><br>`;
+  strategies.forEach(s=>{
+    if(!hiddenLines.has(s)){
+      const v=cumRets[s][i];
+      html+=`<span style="color:${COLORS[s]}">${s}</span>: ${v!==undefined?(v-1>0?'+':'')+((v-1)*100).toFixed(2)+'%':'—'}<br>`;
+    }
+  });
+  tooltip.innerHTML=html;
+  tooltip.style.display='block';
+  tooltip.style.left=(event.clientX+12)+'px';
+  tooltip.style.top=(event.clientY-20)+'px';
+}).on('mouseleave',()=>tooltip.style.display='none');
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+updateChart();
+updateInfo();
+</script>
+</body>
+</html>
